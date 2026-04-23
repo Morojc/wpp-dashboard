@@ -141,6 +141,8 @@ export default function Page() {
   const [error, setError] = useState('')
   const [messages, setMessages] = useState<WppMessage[]>([])
   const [copied, setCopied] = useState(false)
+  const [copiedToken, setCopiedToken] = useState(false)
+  const [showToken, setShowToken] = useState(false)
   const [hasSaved, setHasSaved] = useState(false)
   const [serverHealth, setServerHealth] = useState<'checking' | 'healthy' | 'down'>('checking')
   const [serverUptime, setServerUptime] = useState<number | null>(null)
@@ -265,7 +267,8 @@ export default function Page() {
         return
       }
       setToken(data.token ?? '')
-      setStep(2)
+      setShowToken(false)
+      // Stay on step 1 so the user can copy the token before continuing
     } catch {
       setError('Network error — could not reach the server')
     } finally {
@@ -403,6 +406,7 @@ export default function Page() {
     clearSaved()
     setHasSaved(false)
     setToken('')
+    setShowToken(false)
     setSession('NERDWHATS_AMERICA')
     setWebhookUrl('https://nuvaxy.app.n8n.cloud/webhook/whatsapp')
     setStep(1)
@@ -413,6 +417,12 @@ export default function Page() {
     navigator.clipboard.writeText(token)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const copyTokenStep1 = () => {
+    navigator.clipboard.writeText(token)
+    setCopiedToken(true)
+    setTimeout(() => setCopiedToken(false), 2000)
   }
 
   const formatPhone = (from: string) =>
@@ -518,8 +528,57 @@ export default function Page() {
               disabled={loading || !secretKey.trim() || !session.trim()}
               className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
             >
-              {loading ? 'Generating…' : 'Generate Token'}
+              {loading ? 'Generating…' : token ? 'Regenerate Token' : 'Generate Token'}
             </button>
+
+            {/* Token display — shown after generation */}
+            {token && (
+              <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-green-700">Token generated</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowToken((v) => !v)}
+                      className="text-xs text-green-600 hover:text-green-800 transition-colors"
+                    >
+                      {showToken ? 'Hide' : 'Show'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={copyTokenStep1}
+                      className="flex items-center gap-1 text-xs font-medium bg-green-600 hover:bg-green-700 text-white px-2.5 py-1 rounded-lg transition-colors"
+                    >
+                      {copiedToken ? (
+                        <>
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                          Copy token
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+                <p className={`text-xs font-mono break-all select-all ${showToken ? 'text-gray-800' : 'text-transparent bg-gray-300 rounded select-none'}`}>
+                  {showToken ? token : '•'.repeat(Math.min(token.length, 40))}
+                </p>
+                <button
+                  onClick={() => setStep(2)}
+                  className="w-full bg-white hover:bg-green-100 border border-green-300 text-green-700 font-semibold py-2 rounded-xl text-sm transition-colors"
+                >
+                  Continue to Start Session →
+                </button>
+              </div>
+            )}
+
             <button
               onClick={resetServer}
               disabled={loading || !secretKey.trim()}
