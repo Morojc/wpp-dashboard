@@ -1,0 +1,26 @@
+version: "3"
+
+services:
+  wpp-dashboard:
+    container_name: wpp-dashboard
+    restart: unless-stopped
+    build:
+      context: .
+    environment:
+      # Change to your dashboard domain (or remove VIRTUAL_* if using IP only)
+      - VIRTUAL_HOST=dashboard.masksan.com
+      - VIRTUAL_PORT=3000
+      - LETSENCRYPT_HOST=dashboard.masksan.com
+      - LETSENCRYPT_EMAIL=hmoro.dev@gmail.com
+      # Runtime env vars used by Next.js API routes
+      - WPP_SERVER_URL=https://api.masksan.com
+      - N8N_WEBHOOK_URL=https://nuvaxy.app.n8n.cloud/webhook/whatsapp
+    ports:
+      - "3000:3000"
+    networks:
+      - nginx-public
+      - default
+
+networks:
+  nginx-public:
+    external: true
